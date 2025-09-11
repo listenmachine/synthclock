@@ -1,491 +1,188 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Synaesthesia Clock — Fuzzy Time Edition</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    :root{
-      --bg: #0b0b0c;
-      --fg: #eaeaea;
-      --muted: #8a8a8a;
-      --panel: rgb(28 28 30 / 88%);
-      --tile-size: min(12vw, 96px);
-      --gap: clamp(8px, 1.5vw, 16px);
-      --radius: 22px;
-      --ring-size: min(72vmin, 560px);
-      --ring-thickness: 22px;
-      --shadow: 0 8px 24px rgb(0 0 0 / 35%);
-    }
-
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--fg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      display:grid; place-items:center;
-      transition: background-color .6s ease; /* smooth drift in fuzzy mode */
-    }
-
-    /* ----- Layout ----- */
-    .wrap{ width: min(1100px, 94vw); }
-    .topbar{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      margin: 28px auto 18px; max-width: 1100px;
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px; opacity:.9;
-      letter-spacing:.5px; font-weight:600; font-size:1rem;
-    }
-    .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--fg); filter:blur(.2px); }
-
-    .controls{ display:flex; align-items:center; gap:10px; }
-    .btn{
-      background: #1b1b1d; color:var(--fg); border:1px solid #333;
-      padding:10px 14px; border-radius:14px; cursor:pointer;
-      box-shadow: var(--shadow);
-      font-weight:600; letter-spacing:.2px; transition: .2s ease;
-    }
-    .btn:hover{ filter:brightness(1.1) }
-
-    .clock{ display:grid; justify-content:center; align-items:center; gap: var(--gap); margin: 24px auto 18px; }
-
-    /* Modes */
-    .tiles{ grid-template-columns: repeat(6, var(--tile-size)); }
-    .tile{
-      width: var(--tile-size); height: var(--tile-size);
-      border-radius: var(--radius);
-      box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 7%), var(--shadow);
-      position:relative; overflow:hidden; transform: translateZ(0);
-    }
-    .tile::after{
-      content:""; position:absolute; inset:0;
-      background: linear-gradient(180deg, rgb(255 255 255 / .04), transparent 30%, transparent 70%, rgb(0 0 0 / .15));
-      pointer-events:none;
-    }
-    .tile-num{
-      position:absolute; inset:auto 8px 8px auto;
-      width:28px; height:28px; border-radius:8px;
-      background: rgb(0 0 0 / .22); color: rgb(255 255 255 / .75);
-      display:grid; place-items:center; font-weight:700; font-size:.95rem;
-      opacity:0; transition: opacity .2s ease;
-    }
-    .show-digits .tile-num{ opacity:1 }
-
-    .stripes{ grid-template-columns: repeat(6, 1fr); width:min(1100px, 92vw); height:min(40vh, 340px); }
-    .stripe{ border-radius: 18px; position:relative; overflow:hidden; box-shadow: var(--shadow); }
-    .stripe::after{ content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgb(255 255 255 / .06), transparent 28%, transparent 75%, rgb(0 0 0 / .18));}
-
-    .ring-wrap{ position:relative; width:var(--ring-size); height:var(--ring-size); margin-inline:auto; }
-    .ring{ position:absolute; inset:0; border-radius:50%;
-      mask: radial-gradient(circle at center, transparent calc(50% - var(--ring-thickness)), black calc(50% - var(--ring-thickness) + 1px));
-      box-shadow: var(--shadow);
-    }
-    .ring.hh{ transform: scale(1); }
-    .ring.mm{ transform: scale(.85); }
-    .ring.ss{ transform: scale(.70); }
-
-    .legend{ display:flex; gap:10px; align-items:center; justify-content:center; color:var(--muted); font-size:.9rem; margin-top:10px }
-    .legend .swatch{ width:10px; height:10px; border-radius:50%; box-shadow: 0 0 0 1px rgb(255 255 255 / .35) inset; }
-
-    .progress{ height:10px; width:min(1100px, 92vw); margin: 18px auto 28px; background:#1a1a1c; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); }
-    .progress .bar{ height:100%; width:0%; background: linear-gradient(90deg, #fff, #777); transition: width .25s ease; }
-
-    /* New: Fuzzy mode training hint */
-    .fuzzyHint{ display:flex; gap:8px; align-items:center; justify-content:center; color:var(--muted); font-size:.9rem; margin: 10px 0 2px; }
-    .dotChip{ width:10px; height:10px; border-radius:50%; box-shadow:inset 0 0 0 1px rgb(255 255 255 / .35); }
-
-    /* Settings Panel */
-    dialog{
-      border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg);
-      width:min(920px, 92vw); box-shadow: var(--shadow);
-    }
-    dialog::backdrop{ background: rgb(0 0 0 / .45) }
-    .panel{ padding:20px 18px 18px; }
-    .panel h2{ margin:4px 0 14px; font-size:1.1rem; letter-spacing:.3px; }
-    .grid{ display:grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap:12px; }
-    .sw{ background:#141416; border:1px solid #2d2e33; border-radius:16px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; }
-    .sw label{ font-size:.85rem; color:var(--muted); font-weight:600 }
-    .sw input[type="color"]{ -webkit-appearance:none; appearance:none; width:100%; height:38px; border:none; background:transparent; cursor:pointer; border-radius:12px; overflow:hidden; }
-    .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap }
-    .row .left{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-    .pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#17171a; border:1px solid #2b2c31; font-weight:600 }
-    .select{ padding:8px 12px; border-radius:12px; background:#17171a; color:var(--fg); border:1px solid #2b2c31; }
-    .note{ color:var(--muted); font-size:.9rem }
-
-    @media (max-width: 720px) {
-      :root{ --tile-size: min(18vw, 78px); --ring-thickness: 18px }
-      .grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .stripes{ height: 36vh }
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hour Drift — Minimal Time Gradient</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+  :root{
+    --fg: #eaeaea;
+    --panel: rgb(28 28 30 / 88%);
+    --shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  }
+  html,body{height:100%}
+  body{
+    margin:0; height:100%;
+    background:#0b0b0c; /* will be replaced by gradient */
+    color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    transition: background .6s ease;
+  }
+  /* Top-right minimal controls */
+  .topbar{
+    position:fixed; top:18px; right:18px; display:flex; gap:10px; z-index:5;
+    filter: drop-shadow(0 6px 18px rgb(0 0 0 / .35));
+  }
+  .btn{
+    background:#1b1b1d; color:var(--fg); border:1px solid #333; padding:10px 14px;
+    border-radius:14px; cursor:pointer; font-weight:600; letter-spacing:.2px;
+  }
+  .btn:hover{ filter:brightness(1.1) }
+  .brand{
+    position:fixed; left:18px; top:20px; font-weight:700; opacity:.85;
+    text-shadow: 0 2px 12px rgb(0 0 0 / .45);
+  }
+  .hint{
+    position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    font-size:.9rem; opacity:.7; text-shadow: 0 2px 12px rgb(0 0 0 / .45);
+  }
+  /* Settings */
+  dialog{
+    border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg);
+    width:min(760px, 92vw); box-shadow: var(--shadow);
+  }
+  dialog::backdrop{ background: rgb(0 0 0 / .45) }
+  .panel{ padding:18px }
+  .panel h2{ margin:4px 0 14px; font-size:1.05rem; letter-spacing:.3px; }
+  .grid{ display:grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap:10px; }
+  .sw{ background:#141416; border:1px solid #2d2e33; border-radius:12px; padding:8px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .sw label{ font-size:.8rem; opacity:.8; font-weight:600 }
+  .sw input[type="color"]{ width:100%; height:38px; border:none; background:transparent; border-radius:10px; cursor:pointer; }
+  .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap }
+  .pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#17171a; border:1px solid #2b2c31; font-weight:600 }
+  @media (max-width:760px){ .grid{ grid-template-columns: repeat(3,minmax(0,1fr)); } }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="brand"><span class="dot"></span> Synaesthesia Clock</div>
-      <div class="controls">
-        <button class="btn" id="modeBtn" title="Switch display mode">Mode: Fuzzy</button>
-        <button class="btn" id="digitsBtn" title="Toggle faint numerals for training">Digits: Off</button>
-        <button class="btn" id="settingsBtn" title="Edit your colours">Colours</button>
-      </div>
-    </div>
-
-    <!-- Faces (4 modes) -->
-    <div id="clockTiles" class="clock tiles" hidden aria-label="Clock in tiles mode"></div>
-    <div id="clockStripes" class="clock stripes" hidden aria-label="Clock in stripes mode"></div>
-    <div id="clockRings" class="ring-wrap" hidden aria-label="Clock in rings mode">
-      <div class="ring hh" id="ringHours"></div>
-      <div class="ring mm" id="ringMinutes"></div>
-      <div class="ring ss" id="ringSeconds"></div>
-      <div class="legend" id="ringLegend"></div>
-    </div>
-    <div id="clockFuzzy" aria-label="Clock in fuzzy mode">
-      <div class="fuzzyHint" id="fuzzyHint">
-        <span class="dotChip" id="hNow"></span> now → <span class="dotChip" id="hNext"></span> next hour
-      </div>
-    </div>
-
-    <div class="progress" aria-hidden="true"><div class="bar" id="progressBar"></div></div>
+  <div class="brand">Hour Drift</div>
+  <div class="topbar" id="controls">
+    <button class="btn" id="open">Colours</button>
+    <button class="btn" id="hide">Hide</button>
   </div>
+  <div class="hint">hour → next hour • press <b>H</b> to toggle controls</div>
 
-  <!-- Settings Panel -->
+  <!-- Settings -->
   <dialog id="panel">
     <div class="panel">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;">
-        <h2>Digit Colours (0–9)</h2>
-        <button class="btn" id="closePanel">Close</button>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h2>Hour colours (1–12)</h2>
+        <button class="btn" id="close">Close</button>
       </div>
-      <div class="grid" id="swatchGrid"></div>
-
-      <div class="row" style="margin-top:8px">
-        <div class="left">
-          <label class="pill"><input type="checkbox" id="twelve" checked /> 12-hour time</label>
-          <label class="pill"><input type="checkbox" id="smooth" checked /> Smooth seconds</label>
-          <label class="pill"><input type="checkbox" id="customHour" /> Custom hour colours (1–12)</label>
-        </div>
-        <div class="left">
-          <select id="preset" class="select" title="Pick a preset palette">
-            <option value="">Preset palettes…</option>
-            <option value="vivid">Vivid</option>
-            <option value="pastel">Pastel</option>
-            <option value="mono">Mono dark</option>
-          </select>
+      <div class="grid" id="swGrid"></div>
+      <div class="row">
+        <label class="pill"><input type="checkbox" id="twelve" checked /> 12-hour time</label>
+        <div style="display:flex; gap:10px; align-items:center;">
           <button class="btn" id="reset">Reset</button>
           <button class="btn" id="exportBtn">Export</button>
           <button class="btn" id="importBtn">Import</button>
         </div>
       </div>
-
-      <div id="hourSection" style="margin-top:12px; display:none">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 4px 0 10px;">
-          <h2 style="margin:0">Hour Colours (1–12)</h2>
-          <button class="btn" id="seedHourBtn" title="Seed 1–12 from your digit palette">Seed from digits</button>
-        </div>
-        <div class="grid" id="hourGrid"></div>
-        <p class="note" style="margin-top:10px">Fuzzy mode uses a mix between the current hour colour and the next hour colour. No tick marks, no numerals — just a slow drift you can feel.</p>
-      </div>
+      <p style="opacity:.75; margin-top:10px">The background is a left→right gradient from the current hour colour to the next hour colour. As minutes pass, the gradient’s midpoint slides slowly from the right edge towards the left.</p>
     </div>
   </dialog>
 
-  <script>
-    /* ---------- Palette & Settings ---------- */
-    const DEFAULTS = {
-      palette: [
-        '#ffffff', // 0
-        '#ff5a5f', // 1
-        '#f7b500', // 2
-        '#4bd964', // 3
-        '#34c0ff', // 4
-        '#9b59ff', // 5
-        '#ff9bd3', // 6
-        '#ff7e33', // 7
-        '#16c6a8', // 8
-        '#c6ff34'  // 9
-      ],
-      twelve: true,
-      smooth: true,
-      mode: 'fuzzy',  // 'fuzzy' | 'tiles' | 'stripes' | 'rings'
-      showDigits: false,
-      customHour: false,
-      hourPalette: [
-        '#ff5a5f', '#f7b500', '#4bd964', '#34c0ff', '#9b59ff', '#ff9bd3',
-        '#ff7e33', '#16c6a8', '#c6ff34', '#d96a7f', '#ff5a5f', '#e2902f'
-      ]
-    };
+<script>
+/* ---------- Minimal hour→next-hour gradient ---------- */
+const DEFAULTS = {
+  twelve: true,
+  // 1..12 default palette (tweak freely)
+  hours: [
+    '#ff5a5f', // 1
+    '#f7b500', // 2
+    '#4bd964', // 3
+    '#34c0ff', // 4
+    '#9b59ff', // 5
+    '#ff9bd3', // 6
+    '#ff7e33', // 7
+    '#16c6a8', // 8
+    '#c6ff34', // 9
+    '#d96a7f', // 10
+    '#ff5a5f', // 11
+    '#e2902f'  // 12
+  ]
+};
 
-    const PRESETS = {
-      vivid: ['#ffffff','#e53935','#ffb300','#43a047','#1e88e5','#8e24aa','#f06292','#fb8c00','#00acc1','#c6ff00'],
-      pastel:['#f9f9f9','#f8b4b4','#fde68a','#c7f9cc','#a0d8ff','#d7bdf2','#f7c6e0','#ffd9b5','#b9f4ea','#e8ffb0'],
-      mono:  ['#f0f0f0','#c9c9c9','#b8b8b8','#a7a7a7','#969696','#858585','#747474','#636363','#525252','#414141']
-    };
+const store = {
+  load(){ try{ return JSON.parse(localStorage.getItem('hourDrift')) || DEFAULTS }catch{ return DEFAULTS } },
+  save(s){ localStorage.setItem('hourDrift', JSON.stringify(s)); }
+};
+let state = store.load();
 
-    const store = {
-      load(){ try{ return JSON.parse(localStorage.getItem('synClock')) || DEFAULTS }catch{ return DEFAULTS } },
-      save(data){ localStorage.setItem('synClock', JSON.stringify(data)); }
-    };
+/* ---------- DOM ---------- */
+const controls = document.getElementById('controls');
+const openBtn  = document.getElementById('open');
+const hideBtn  = document.getElementById('hide');
+const panel    = document.getElementById('panel');
+const closeBtn = document.getElementById('close');
+const grid     = document.getElementById('swGrid');
+const twelve   = document.getElementById('twelve');
 
-    let state = store.load();
+/* ---------- UI ---------- */
+function buildSwatches(){
+  grid.innerHTML = '';
+  for(let i=1;i<=12;i++){
+    const wrap = document.createElement('div'); wrap.className='sw';
+    const lab = document.createElement('label'); lab.textContent = i;
+    const inp = document.createElement('input'); inp.type='color'; inp.value = state.hours[i-1];
+    inp.addEventListener('input', e => { state.hours[i-1]=e.target.value; store.save(state); });
+    wrap.append(lab, inp); grid.appendChild(wrap);
+  }
+}
+openBtn.onclick = ()=>{ buildSwatches(); twelve.checked=!!state.twelve; panel.showModal(); };
+closeBtn.onclick = ()=> panel.close();
+hideBtn.onclick = ()=> controls.style.display='none';
+document.addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='h'){ controls.style.display = controls.style.display==='none' ? '' : 'none'; }});
+twelve.onchange = e=>{ state.twelve=!!e.target.checked; store.save(state); };
 
-    /* ---------- DOM ---------- */
-    const tilesEl = document.getElementById('clockTiles');
-    const stripesEl = document.getElementById('clockStripes');
-    const ringH = document.getElementById('ringHours');
-    const ringM = document.getElementById('ringMinutes');
-    const ringS = document.getElementById('ringSeconds');
-    const ringLegend = document.getElementById('ringLegend');
-    const progress = document.querySelector('.progress');
-    const progressBar = document.getElementById('progressBar');
+document.getElementById('reset').onclick = ()=>{
+  state = JSON.parse(JSON.stringify(DEFAULTS));
+  store.save(state); buildSwatches();
+};
+document.getElementById('exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state)], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hour-drift-colours.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick = ()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange=()=>{ const f=inp.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{ try{ const obj=JSON.parse(r.result); if(obj.hours) state.hours=obj.hours.slice(0,12); if(typeof obj.twelve==='boolean') state.twelve=obj.twelve; store.save(state); buildSwatches(); }catch{} };
+    r.readAsText(f);
+  }; inp.click();
+};
 
-    const modeBtn = document.getElementById('modeBtn');
-    const digitsBtn = document.getElementById('digitsBtn');
-    const panel = document.getElementById('panel');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const swatchGrid = document.getElementById('swatchGrid');
-    const twelve = document.getElementById('twelve');
-    const smooth = document.getElementById('smooth');
-    const preset = document.getElementById('preset');
-    const customHour = document.getElementById('customHour');
-    const hourSection = document.getElementById('hourSection');
-    const hourGrid = document.getElementById('hourGrid');
-    const seedHourBtn = document.getElementById('seedHourBtn');
-    const fuzzyHint = document.getElementById('fuzzyHint');
-    const hNow = document.getElementById('hNow');
-    const hNext = document.getElementById('hNext');
+/* ---------- Time → gradient ---------- */
+function h12(h){ const v = h % 12; return v===0 ? 12 : v; }
+function hourColor(hour){ return state.hours[(hour-1+12)%12] || '#ffffff'; }
 
-    /* ---------- Helpers ---------- */
-    function hexToRgb(hex){
-      const m = hex.trim().replace('#','');
-      const v = m.length===3 ? m.split('').map(x=>x+x).join('') : m;
-      return { r: parseInt(v.slice(0,2),16), g: parseInt(v.slice(2,4),16), b: parseInt(v.slice(4,6),16) };
-    }
-    function rgbc(r,g,b){ return 'rgb(' + r + ', ' + g + ', ' + b + ')'; }
-    function lerp(a,b,t){ return a + (b - a) * t; }
-    function lerpColor(a,b,t){
-      const pa = hexToRgb(a), pb = hexToRgb(b);
-      const r = Math.round(lerp(pa.r,pb.r,t));
-      const g = Math.round(lerp(pa.g,pb.g,t));
-      const b2 = Math.round(lerp(pa.b,pb.b,t));
-      return rgbc(r,g,b2);            /* comma form for broad browser support */
-    }
+function update(){
+  const now = new Date();
+  // current hour in chosen format (1..12)
+  const cur = state.twelve ? h12(now.getHours()) : h12(now.getHours()); // we reuse 12-color mapping either way
+  const next = cur % 12 + 1;
 
-    /* ---------- Swatches ---------- */
-    function buildSwatches(){
-      swatchGrid.innerHTML = '';
-      for(let i=0;i<10;i++){
-        const sw = document.createElement('div'); sw.className = 'sw';
-        const lab = document.createElement('label'); lab.textContent = i;
-        const inp = document.createElement('input'); inp.type = 'color'; inp.value = state.palette[i]; inp.dataset.idx = i;
-        inp.addEventListener('input', (e)=>{ state.palette[i] = e.target.value; store.save(state); if(!state.customHour) seedHourFromDigits(); });
-        sw.append(lab, inp); swatchGrid.appendChild(sw);
-      }
-    }
+  const cNow  = hourColor(cur);
+  const cNext = hourColor(next);
 
-    function buildHourSwatches(){
-      hourGrid.innerHTML = '';
-      for(let i=1;i<=12;i++){
-        const sw = document.createElement('div'); sw.className = 'sw';
-        const lab = document.createElement('label'); lab.textContent = i;
-        const inp = document.createElement('input'); inp.type = 'color'; inp.value = state.hourPalette[i-1]; inp.dataset.idx = i-1;
-        inp.addEventListener('input', (e)=>{ state.hourPalette[i-1] = e.target.value; store.save(state); });
-        sw.append(lab, inp); hourGrid.appendChild(sw);
-      }
-    }
+  // Hour progress (0 at :00 → 1 at :59.999)
+  const t = (now.getMinutes() + now.getSeconds()/60 + now.getMilliseconds()/60000) / 60;
 
-    function seedHourFromDigits(){
-      const P = state.palette;
-      const mix = (a,b,t=0.5)=> lerpColor(a,b,t);
-      const hp = [];
-      hp[0]=P[1]; hp[1]=P[2]; hp[2]=P[3]; hp[3]=P[4]; hp[4]=P[5]; hp[5]=P[6];
-      hp[6]=P[7]; hp[7]=P[8]; hp[8]=P[9];
-      hp[9]=mix(P[1],P[0],0.3); hp[10]=P[1]; hp[11]=mix(P[1],P[2],0.5);
-      state.hourPalette = hp; store.save(state); buildHourSwatches();
-    }
+  // Midpoint moves from right (near 100%) → left (near 0%)
+  const p = (1 - t) * 100;             // center position in %
+  const band = 22;                      // width of blend band in %
+  const p1 = Math.max(0, Math.min(100, p - band/2));
+  const p2 = Math.max(0, Math.min(100, p + band/2));
 
-    /* ---------- Faces ---------- */
-    function initFaces(){
-      // Tiles
-      tilesEl.innerHTML = '';
-      for(let i=0;i<6;i++){
-        const t = document.createElement('div'); t.className = 'tile';
-        const n = document.createElement('div'); n.className = 'tile-num'; n.textContent = '0';
-        t.appendChild(n); tilesEl.appendChild(t);
-      }
-      // Stripes
-      stripesEl.innerHTML = '';
-      for(let i=0;i<6;i++){ const s = document.createElement('div'); s.className = 'stripe'; stripesEl.appendChild(s); }
-      updateDigits();
-    }
+  // Build CSS gradient with a smooth blend band
+  const grad = `linear-gradient(90deg,
+                 ${cNow} 0%,
+                 ${cNow} ${p1}%,
+                 ${cNext} ${p2}%,
+                 ${cNext} 100%)`;
+  document.body.style.backgroundImage = grad;
 
-    function getDigits(date){
-      let h = date.getHours();
-      if(state.twelve) h = (h % 12) || 12;
-      const m = date.getMinutes();
-      const s = date.getSeconds();
-      const pad = n => String(n).padStart(2,'0');
-      const [H1,H2] = pad(h);
-      const [M1,M2] = pad(m);
-      const [S1,S2] = pad(s);
-      return [H1,H2,M1,M2,S1,S2].map(d=>parseInt(d,10));
-    }
-
-    function colourOfDigit(d){ return state.palette[d] || '#fff'; }
-
-    function hourColour(hour){
-      if(state.customHour){ return state.hourPalette[(hour-1+12)%12] || '#fff'; }
-      const digits = String(hour).padStart(2,'0').split('').map(x=>parseInt(x,10));
-      const c1 = colourOfDigit(digits[0]);
-      const c2 = colourOfDigit(digits[1]);
-      const t = (hour>=10) ? 0.35 : 0.5;  // bias toward first digit for 10–12
-      return lerpColor(c1, c2, t);
-    }
-
-    function applyMode(){
-      const fuzzy = state.mode==='fuzzy';
-      tilesEl.hidden   = state.mode !== 'tiles';
-      stripesEl.hidden = state.mode !== 'stripes';
-      document.getElementById('clockRings').hidden = state.mode !== 'rings';
-      document.getElementById('clockFuzzy').hidden = !fuzzy;
-      modeBtn.textContent = 'Mode: ' + (state.mode[0].toUpperCase()+state.mode.slice(1));
-      progress.style.display = fuzzy ? 'none' : '';   // definitely hide in fuzzy
-      fuzzyHint.hidden = !fuzzy;
-    }
-
-    function cycleMode(){
-      state.mode = state.mode === 'fuzzy' ? 'tiles'
-                : state.mode === 'tiles'  ? 'stripes'
-                : state.mode === 'stripes'? 'rings'
-                : 'fuzzy';
-      store.save(state); applyMode();
-    }
-
-    function updateDigits(){
-      const now = new Date();
-      const ds = getDigits(now);
-
-      // Tiles
-      const tileNodes = tilesEl.querySelectorAll('.tile');
-      const numNodes  = tilesEl.querySelectorAll('.tile-num');
-      ds.forEach((d, i)=>{ const c = colourOfDigit(d); tileNodes[i].style.background = c; numNodes[i].textContent = d; });
-      tilesEl.classList.toggle('show-digits', state.showDigits);
-
-      // Stripes
-      const stripeNodes = stripesEl.querySelectorAll('.stripe');
-      ds.forEach((d, i)=>{ stripeNodes[i].style.background = colourOfDigit(d); });
-
-      // Rings
-      const [h1,h2,m1,m2,s1,s2] = ds;
-      const secondsFrac = state.smooth ? (now.getSeconds() + now.getMilliseconds()/1000)/60 : now.getSeconds()/60;
-      const deg = secondsFrac * 360;
-      ringH.style.background = `conic-gradient(${colourOfDigit(h1)} 0 180deg, ${colourOfDigit(h2)} 180deg 360deg)`;
-      ringM.style.background = `conic-gradient(${colourOfDigit(m1)} 0 180deg, ${colourOfDigit(m2)} 180deg 360deg)`;
-      ringS.style.background = `conic-gradient(${colourOfDigit(s1)} 0 ${deg}deg, ${colourOfDigit(s2)} ${deg}deg 360deg)`;
-      ringLegend.innerHTML = `
-        <span class="swatch" style="background:${colourOfDigit(h1)}"></span>H1
-        <span class="swatch" style="background:${colourOfDigit(h2)}"></span>H2
-        <span style="width:10px"></span>
-        <span class="swatch" style="background:${colourOfDigit(m1)}"></span>M1
-        <span class="swatch" style="background:${colourOfDigit(m2)}"></span>M2
-        <span style="width:10px"></span>
-        <span class="swatch" style="background:${colourOfDigit(s1)}"></span>S1
-        <span class="swatch" style="background:${colourOfDigit(s2)}"></span>S2
-      `;
-
-      // Progress bar (non-fuzzy modes only)
-      const minutePct = ((now.getSeconds() + now.getMilliseconds()/1000)/60) * 100;
-      progressBar.style.width = `${minutePct}%`;
-      progressBar.style.background = `linear-gradient(90deg, ${colourOfDigit(s1)}, ${colourOfDigit(s2)})`;
-
-      // Fuzzy: body background drifts from hour→next hour
-      if(state.mode==='fuzzy'){
-        let h = now.getHours();
-        if(state.twelve) h = (h % 12) || 12; // 1..12
-        const rawNext = state.twelve ? ((h % 12) + 1) : ((now.getHours()+1) % 24);
-        const next = state.twelve ? rawNext : ((rawNext%12)||12);
-
-        const hNowC  = hourColour(h);
-        const hNextC = hourColour(next);
-        const t = now.getMinutes()/60 + (state.smooth ? now.getSeconds()/3600 : 0);
-        const mix = lerpColor(hNowC, hNextC, Math.min(Math.max(t,0),1));
-
-        document.body.style.backgroundColor = mix;  /* animate background-color */
-        hNow.style.background  = hNowC;
-        hNext.style.background = hNextC;
-      } else {
-        document.body.style.backgroundColor = 'var(--bg)';
-      }
-    }
-
-    /* ---------- Start & UI ---------- */
-    buildSwatches(); buildHourSwatches(); initFaces(); applyMode(); updateDigits();
-
-    settingsBtn.addEventListener('click', ()=>{
-      buildSwatches(); buildHourSwatches();
-      twelve.checked = !!state.twelve;
-      smooth.checked = !!state.smooth;
-      customHour.checked = !!state.customHour;
-      hourSection.style.display = state.customHour ? 'block' : 'none';
-      panel.showModal();
-    });
-    document.getElementById('closePanel').addEventListener('click', ()=> panel.close());
-    twelve.addEventListener('change', (e)=>{ state.twelve = !!e.target.checked; store.save(state); updateDigits(); });
-    smooth.addEventListener('change', (e)=>{ state.smooth = !!e.target.checked; store.save(state); });
-    customHour.addEventListener('change', (e)=>{ state.customHour = !!e.target.checked; store.save(state); hourSection.style.display = state.customHour? 'block':'none'; });
-    document.getElementById('reset').addEventListener('click', ()=>{
-      state = JSON.parse(JSON.stringify(DEFAULTS));
-      store.save(state);
-      buildSwatches(); buildHourSwatches(); applyMode(); updateDigits();
-    });
-    preset.addEventListener('change', (e)=>{
-      const key = e.target.value; if(!key) return;
-      state.palette = PRESETS[key].slice();
-      store.save(state);
-      buildSwatches();
-      if(!state.customHour) seedHourFromDigits();
-      updateDigits();
-      e.target.value='';
-    });
-    document.getElementById('exportBtn').addEventListener('click', ()=>{
-      const payload = {palette: state.palette, hourPalette: state.hourPalette, customHour: state.customHour};
-      const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'syn-clock-colours.json'; a.click(); URL.revokeObjectURL(a.href);
-    });
-    document.getElementById('importBtn').addEventListener('click', ()=>{
-      const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-      inp.onchange = () => {
-        const f = inp.files[0]; if(!f) return;
-        const r = new FileReader();
-        r.onload = () => {
-          try{
-            const obj = JSON.parse(r.result);
-            if(obj.palette && Array.isArray(obj.palette)) state.palette = obj.palette.slice(0,10);
-            if(obj.hourPalette && Array.isArray(obj.hourPalette)) state.hourPalette = obj.hourPalette.slice(0,12);
-            if(typeof obj.customHour==='boolean') state.customHour = obj.customHour;
-            store.save(state);
-            buildSwatches(); buildHourSwatches(); updateDigits();
-          } catch{}
-        };
-        r.readAsText(f);
-      };
-      inp.click();
-    });
-    seedHourBtn.addEventListener('click', seedHourFromDigits);
-    modeBtn.addEventListener('click', cycleMode);
-    digitsBtn.addEventListener('click', ()=>{
-      state.showDigits = !state.showDigits;
-      digitsBtn.textContent = `Digits: ${state.showDigits? 'On':'Off'}`;
-      store.save(state); updateDigits();
-    });
-
-    // Animation loop (throttled by the browser in background tabs)
-    let rafId; function loop(){ updateDigits(); rafId = requestAnimationFrame(loop); } loop();
-
-    // Respect reduced motion
-    const media = matchMedia('(prefers-reduced-motion: reduce)');
-    function onPRM(){ if(media.matches){ cancelAnimationFrame(rafId); setInterval(updateDigits, 250); } }
-    media.addEventListener('change', onPRM); onPRM();
-  </script>
+  requestAnimationFrame(update);
+}
+update();
+</script>
 </body>
 </html>
