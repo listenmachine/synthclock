@@ -10,7 +10,7 @@
     --fg: #eaeaea;
     --panel: rgb(28 28 30 / 88%);
     --shadow: 0 8px 24px rgb(0 0 0 / 35%);
-    --grain-opacity: .14;
+    --grain-opacity: .14; /* controlled by slider */
   }
   html,body{height:100%}
   body{
@@ -19,15 +19,15 @@
     color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     transition: background .6s ease;
   }
-
   /* Grain overlay */
   .grain{
     position:fixed; inset:0; z-index:2; pointer-events:none;
-    mix-blend-mode: soft-light; opacity: var(--grain-opacity);
-    background-repeat: repeat; background-size: auto;
+    mix-blend-mode: soft-light;           /* gentle contrast lift */
+    opacity: var(--grain-opacity);
+    background-repeat: repeat;
+    background-size: auto;
   }
-
-  /* Minimal controls */
+  /* Top-right minimal controls */
   .topbar{
     position:fixed; top:18px; right:18px; display:flex; gap:10px; z-index:5;
     filter: drop-shadow(0 6px 18px rgb(0 0 0 / .35));
@@ -45,11 +45,10 @@
     position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
     font-size:.9rem; opacity:.7; text-shadow: 0 2px 12px rgb(0 0 0 / .45); z-index:5;
   }
-
   /* Settings */
   dialog{
     border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg);
-    width:min(900px, 92vw); box-shadow: var(--shadow);
+    width:min(760px, 92vw); box-shadow: var(--shadow);
   }
   dialog::backdrop{ background: rgb(0 0 0 / .45) }
   .panel{ padding:18px }
@@ -58,17 +57,11 @@
   .sw{ background:#141416; border:1px solid #2d2e33; border-radius:12px; padding:8px; display:flex; flex-direction:column; align-items:center; gap:6px; }
   .sw label{ font-size:.8rem; opacity:.8; font-weight:600 }
   .sw input[type="color"]{ width:100%; height:38px; border:none; background:transparent; border-radius:10px; cursor:pointer; }
-
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap }
-  .left{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
   .pill{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:#17171a; border:1px solid #2b2c31; font-weight:600 }
-  .select{ padding:8px 12px; border-radius:12px; background:#17171a; color:var(--fg); border:1px solid #2b2c31; }
-  .range{ display:flex; align-items:center; gap:8px; }
-  .range input{ width:180px; }
-  @media (max-width:760px){ .grid{ grid-template-columns: repeat(3,minmax(0,1fr)); } .range input{ width:140px; } }
-
-  /* Build tag */
-  .version{position:fixed; right:14px; bottom:14px; font:12px/1.2 ui-sans-serif,system-ui; opacity:.35}
+  .range{ display:flex; align-items:center; gap:10px; }
+  .range input{ width:200px; }
+  @media (max-width:760px){ .grid{ grid-template-columns: repeat(3,minmax(0,1fr)); } .range input{ width:150px; } }
 </style>
 </head>
 <body>
@@ -78,8 +71,9 @@
     <button class="btn" id="hide">Hide</button>
   </div>
   <div class="hint">hour → next hour • press <b>H</b> to toggle controls</div>
+
+  <!-- Grain overlay -->
   <div class="grain" id="grain" aria-hidden="true"></div>
-  <div class="version" id="ver"></div>
 
   <!-- Settings -->
   <dialog id="panel">
@@ -91,52 +85,13 @@
       <div class="grid" id="swGrid"></div>
 
       <div class="row">
-        <div class="left">
-          <label class="pill"><input type="checkbox" id="twelve" checked /> 12-hour time</label>
-          <label class="pill">Blend
-            <select id="blend" class="select">
-              <option value="oklch">OKLCH (perceptual)</option>
-              <option value="oklch-long">OKLCH (long path)</option>
-              <option value="hsl">HSL</option>
-              <option value="srgb">sRGB (basic)</option>
-              <option value="via-white">Via white</option>
-              <option value="via-black">Via black</option>
-            </select>
-          </label>
-          <label class="pill">Hue path
-            <select id="huePath" class="select">
-              <option value="short">Shortest</option>
-              <option value="cw">Clockwise</option>
-              <option value="ccw">Counter-clockwise</option>
-            </select>
-          </label>
-          <label class="pill">Angle
-            <input type="range" id="angle" min="0" max="180" value="90" />
-            <span id="angleVal">90°</span>
-          </label>
-        </div>
-
-        <div class="left">
-          <label class="pill range">Band
-            <input type="range" id="band" min="10" max="50" value="28" />
-            <span id="bandVal">28%</span>
-          </label>
-          <label class="pill range">Chroma boost
-            <input type="range" id="chroma" min="0" max="60" value="24" />
-            <span id="chromaVal">24%</span>
-          </label>
-          <label class="pill range">Mid lightness
-            <input type="range" id="lift" min="-20" max="20" value="8" />
-            <span id="liftVal">+8%</span>
-          </label>
-        </div>
-
-        <div class="left">
-          <label class="pill range">Grain
-            <input type="range" id="grainAmt" min="0" max="30" value="14" />
-            <span id="grainVal">14%</span>
-          </label>
+        <label class="pill"><input type="checkbox" id="twelve" checked /> 12-hour time</label>
+        <div class="range">
+          <label class="pill">Grain <span id="grainVal">14%</span></label>
+          <input type="range" id="grainAmt" min="0" max="30" value="14" />
           <label class="pill"><input type="checkbox" id="grainAnim" checked /> Animate</label>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
           <button class="btn" id="reset">Reset</button>
           <button class="btn" id="exportBtn">Export</button>
           <button class="btn" id="importBtn">Import</button>
@@ -144,34 +99,23 @@
       </div>
 
       <p style="opacity:.75; margin-top:10px">
-        “Chroma boost” adds saturation in the middle of the band and “Mid lightness” gently brightens or darkens it.
-        Together with OKLCH blending and your chosen hue path, complements like yellow→blue arc through vivid colour
-        instead of a muddy brown/grey.
+        The background is a left→right gradient from the current hour colour to the next hour colour.
+        As minutes pass, the gradient’s midpoint slides slowly from the right edge towards the left.
+        The grain helps break banding and adds a soft, film-like texture.
       </p>
     </div>
   </dialog>
 
 <script>
-/* ===== Build tag ===== */
-const BUILD = 'oklch-pretty-v11';
-document.getElementById('ver').textContent = BUILD;
-console.info('HourDrift build:', BUILD);
-
-/* ===== State ===== */
+/* ---------- Minimal hour→next-hour gradient with grain ---------- */
 const DEFAULTS = {
   twelve: true,
   hours: [
-    '#ffdf43', '#1e49ff', '#4bd964', '#34c0ff', '#9b59ff', '#ff9bd3',
+    '#ff5a5f', '#f7b500', '#4bd964', '#34c0ff', '#9b59ff', '#ff9bd3',
     '#ff7e33', '#16c6a8', '#c6ff34', '#d96a7f', '#ff5a5f', '#e2902f'
   ],
-  grainAmt: 14,
-  grainAnim: true,
-  blend: 'oklch',      // 'oklch' | 'oklch-long' | 'hsl' | 'srgb' | 'via-white' | 'via-black'
-  huePath: 'cw',       // 'short' | 'cw' | 'ccw'
-  band: 28,            // % width of blend band
-  chroma: 24,          // % boost to C at mid
-  lift: 8,             // % L lift at mid (negative darkens)
-  angle: 90            // gradient angle in degrees
+  grainAmt: 14,   // 0–30 (% opacity)
+  grainAnim: true // animate noise (refresh every ~250ms)
 };
 
 const store = {
@@ -180,7 +124,7 @@ const store = {
 };
 let state = store.load();
 
-/* ===== DOM ===== */
+/* ---------- DOM ---------- */
 const controls = document.getElementById('controls');
 const openBtn  = document.getElementById('open');
 const hideBtn  = document.getElementById('hide');
@@ -189,23 +133,12 @@ const closeBtn = document.getElementById('close');
 const grid     = document.getElementById('swGrid');
 const twelve   = document.getElementById('twelve');
 
-const blendSel   = document.getElementById('blend');
-const huePathSel = document.getElementById('huePath');
-const angleEl    = document.getElementById('angle');
-const angleVal   = document.getElementById('angleVal');
-const bandEl     = document.getElementById('band');
-const bandVal    = document.getElementById('bandVal');
-const chromaEl   = document.getElementById('chroma');
-const chromaVal  = document.getElementById('chromaVal');
-const liftEl     = document.getElementById('lift');
-const liftVal    = document.getElementById('liftVal');
-
 const grainDiv   = document.getElementById('grain');
 const grainAmtEl = document.getElementById('grainAmt');
 const grainVal   = document.getElementById('grainVal');
 const grainAnimEl= document.getElementById('grainAnim');
 
-/* ===== UI ===== */
+/* ---------- UI ---------- */
 function buildSwatches(){
   grid.innerHTML = '';
   for(let i=1;i<=12;i++){
@@ -216,32 +149,11 @@ function buildSwatches(){
     wrap.append(lab, inp); grid.appendChild(wrap);
   }
 }
-openBtn.onclick = ()=>{
-  buildSwatches();
-  twelve.checked=!!state.twelve;
-  blendSel.value=state.blend;
-  huePathSel.value=state.huePath;
-
-  angleEl.value=state.angle; angleVal.textContent = state.angle + '°';
-  bandEl.value=state.band; bandVal.textContent = state.band + '%';
-  chromaEl.value=state.chroma; chromaVal.textContent = state.chroma + '%';
-  liftEl.value=state.lift; liftVal.textContent = (state.lift>=0?'+':'') + state.lift + '%';
-
-  grainAmtEl.value=state.grainAmt; grainVal.textContent = state.grainAmt + '%';
-  grainAnimEl.checked=!!state.grainAnim;
-  panel.showModal();
-};
+openBtn.onclick = ()=>{ buildSwatches(); twelve.checked=!!state.twelve; grainAmtEl.value=state.grainAmt; grainVal.textContent = state.grainAmt + '%'; grainAnimEl.checked=!!state.grainAnim; panel.showModal(); };
 closeBtn.onclick = ()=> panel.close();
 hideBtn.onclick = ()=> controls.style.display='none';
-document.addEventListener('keydown', e=>{ if(e.key && e.key.toLowerCase()==='h'){ controls.style.display = controls.style.display==='none' ? '' : 'none'; }});
-
+document.addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='h'){ controls.style.display = controls.style.display==='none' ? '' : 'none'; }});
 twelve.onchange = e=>{ state.twelve=!!e.target.checked; store.save(state); };
-blendSel.onchange = e=>{ state.blend = e.target.value; store.save(state); };
-huePathSel.onchange = e=>{ state.huePath = e.target.value; store.save(state); };
-angleEl.oninput = e=>{ state.angle=parseInt(e.target.value,10); angleVal.textContent = state.angle + '°'; store.save(state); };
-bandEl.oninput = e=>{ state.band=parseInt(e.target.value,10); bandVal.textContent = state.band + '%'; store.save(state); };
-chromaEl.oninput = e=>{ state.chroma=parseInt(e.target.value,10); chromaVal.textContent = state.chroma + '%'; store.save(state); };
-liftEl.oninput = e=>{ state.lift=parseInt(e.target.value,10); liftVal.textContent = (state.lift>=0?'+':'') + state.lift + '%'; store.save(state); };
 
 document.getElementById('reset').onclick = ()=>{
   state = JSON.parse(JSON.stringify(DEFAULTS));
@@ -249,17 +161,16 @@ document.getElementById('reset').onclick = ()=>{
 };
 document.getElementById('exportBtn').onclick = ()=>{
   const blob = new Blob([JSON.stringify(state)], {type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hour-drift-settings.json'; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='hour-drift-colours.json'; a.click(); URL.revokeObjectURL(a.href);
 };
 document.getElementById('importBtn').onclick = ()=>{
   const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
   inp.onchange=()=>{ const f=inp.files[0]; if(!f) return; const r=new FileReader();
-    r.onload=()=>{ try{
-      const obj=JSON.parse(r.result);
+    r.onload=()=>{ try{ const obj=JSON.parse(r.result);
       if(obj.hours) state.hours=obj.hours.slice(0,12);
-      ['twelve','grainAnim'].forEach(k=>{ if(typeof obj[k]==='boolean') state[k]=obj[k]; });
-      ['grainAmt','band','chroma','lift','angle'].forEach(k=>{ if(typeof obj[k]==='number') state[k]=obj[k]; });
-      ['blend','huePath'].forEach(k=>{ if(typeof obj[k]==='string') state[k]=obj[k]; });
+      if(typeof obj.twelve==='boolean') state.twelve=obj.twelve;
+      if(typeof obj.grainAmt==='number') state.grainAmt=Math.max(0,Math.min(30, obj.grainAmt));
+      if(typeof obj.grainAnim==='boolean') state.grainAnim=obj.grainAnim;
       store.save(state); buildSwatches(); applyGrain();
     }catch{} }; r.readAsText(f);
   }; inp.click();
@@ -267,18 +178,20 @@ document.getElementById('importBtn').onclick = ()=>{
 grainAmtEl.oninput = e=>{ state.grainAmt = parseInt(e.target.value||0,10); grainVal.textContent = state.grainAmt + '%'; store.save(state); applyGrain(); };
 grainAnimEl.onchange = e=>{ state.grainAnim = !!e.target.checked; store.save(state); applyGrain(); };
 
-/* ===== Grain (tile-based) ===== */
+/* ---------- Grain generator (tile-based, lightweight) ---------- */
 let grainTimer = null;
 function renderGrain(){
   const size = 128;
   if(!renderGrain.canvas){
-    const c = document.createElement('canvas'); c.width = size; c.height = size;
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
     renderGrain.canvas = c; renderGrain.ctx = c.getContext('2d', { willReadFrequently: true });
   }
   const c = renderGrain.canvas, ctx = renderGrain.ctx;
-  const id = ctx.createImageData(size, size); const data = id.data;
+  const id = ctx.createImageData(size, size);
+  const data = id.data;
   for(let i=0;i<data.length;i+=4){
-    const v = (Math.random()*255)|0;
+    const v = (Math.random()*255)|0;         // white noise
     data[i]=data[i+1]=data[i+2]=v; data[i+3]=255;
   }
   ctx.putImageData(id,0,0);
@@ -289,206 +202,44 @@ function applyGrain(){
   grainDiv.style.display = state.grainAmt>0 ? 'block' : 'none';
   renderGrain();
   if(grainTimer){ clearInterval(grainTimer); grainTimer = null; }
-  if(state.grainAnim && state.grainAmt>0){ grainTimer = setInterval(renderGrain, 250); }
-}
-
-/* ===== Color utils (sRGB, OKLab/OKLCH, HSL) ===== */
-function srgbToLinear(u){ u/=255; return u<=0.04045 ? u/12.92 : Math.pow((u+0.055)/1.055, 2.4); }
-function linearToSrgb(u){ return u<=0.0031308 ? 12.92*u : 1.055*Math.pow(u,1/2.4)-0.055; }
-function clamp01(x){ return Math.min(1, Math.max(0, x)); }
-function hexToRgb(hex){
-  const h = hex.replace('#','').trim();
-  const v = h.length===3 ? h.split('').map(x=>x+x).join('') : h;
-  return { r: parseInt(v.slice(0,2),16), g: parseInt(v.slice(2,4),16), b: parseInt(v.slice(4,6),16) };
-}
-function rgbToHex(r,g,b){ const toHex = v => ('0'+Math.round(v).toString(16)).slice(-2); return '#'+toHex(r)+toHex(g)+toHex(b); }
-
-function rgbToOklab(r8,g8,b8){
-  const r = srgbToLinear(r8), g = srgbToLinear(g8), b = srgbToLinear(b8);
-  const l = 0.4122214708*r + 0.5363325363*g + 0.0514459929*b;
-  const m = 0.2119034982*r + 0.6806995451*g + 0.1073969566*b;
-  const s = 0.0883024619*r + 0.2817188376*g + 0.6299787005*b;
-  const l_ = Math.cbrt(l), m_ = Math.cbrt(m), s_ = Math.cbrt(s);
-  const L = 0.2104542553*l_ + 0.7936177850*m_ - 0.0040720468*s_;
-  const a = 1.9779984951*l_ - 2.4285922050*m_ + 0.4505937099*s_;
-  const bb= 0.0259040371*l_ + 0.7827717662*s_ - 0.8086757660*m_;
-  return {L,a,b:bb};
-}
-function oklabToRgb(L,a,b){
-  const l_ = Math.pow(L + 0.3963377774*a + 0.2158037573*b, 3);
-  const m_ = Math.pow(L - 0.1055613458*a - 0.0638541728*b, 3);
-  const s_ = Math.pow(L - 0.0894841775*a - 1.2914855480*b, 3);
-  const r =  4.0767416621*l_ - 3.3077115913*m_ + 0.2309699292*s_;
-  const g = -1.2684380046*l_ + 2.6097574011*m_ - 0.3413193965*s_;
-  const bl=  0.0041960863*l_ - 0.7034186147*m_ + 1.6990625617*s_;
-  return {
-    r: Math.round(clamp01(linearToSrgb(r))*255),
-    g: Math.round(clamp01(linearToSrgb(g))*255),
-    b: Math.round(clamp01(linearToSrgb(bl))*255)
-  };
-}
-function oklabToOklch(L,a,b){ const C = Math.hypot(a,b); let h = Math.atan2(b,a)*180/Math.PI; if(h<0) h+=360; return {L,C,h}; }
-function oklchToOklab(L,C,h){ const hr=h*Math.PI/180; return {L, a:C*Math.cos(hr), b:C*Math.sin(hr)}; }
-
-/* HSL */
-function rgbToHsl(r,g,b){
-  r/=255; g/=255; b/=255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b);
-  let h,s,l=(max+min)/2;
-  if(max===min){ h=s=0; }
-  else{
-    const d=max-min; s=l>0.5? d/(2-max-min) : d/(max+min);
-    switch(max){
-      case r: h=(g-b)/d+(g<b?6:0); break;
-      case g: h=(b-r)/d+2; break;
-      case b: h=(r-g)/d+4; break;
-    }
-    h*=60;
+  if(state.grainAnim && state.grainAmt>0){
+    grainTimer = setInterval(renderGrain, 250); // gentle shimmer
   }
-  return {h,s,l};
-}
-function hslToRgb(h,s,l){
-  const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
-  let r=0,g=0,b=0;
-  if(0<=h&&h<60){ r=c; g=x; }
-  else if(60<=h&&h<120){ r=x; g=c; }
-  else if(120<=h&&h<180){ g=c; b=x; }
-  else if(180<=h&&h<240){ g=x; b=c; }
-  else if(240<=h&&h<300){ r=x; b=c; }
-  else { r=c; b=x; }
-  return { r:Math.round((r+m)*255), g:Math.round((g+m)*255), b:Math.round((b+m)*255) };
 }
 
-/* Hue interpolation */
-function hueDelta(h1,h2,mode){
-  const diff = ((h2 - h1 + 540) % 360) - 180; // shortest
-  if(mode==='short') return diff;
-  if(mode==='cw'){ let d=(h2-h1+360)%360; if(d===0 && h1!==h2) d=360; return d; }
-  if(mode==='ccw'){ let d=-((h1-h2+360)%360); if(d===0 && h1!==h2) d=-360; return d; }
-  return diff;
-}
-
-/* Mixers */
-function mix_srgb(c1,c2,t){
-  const a=hexToRgb(c1), b=hexToRgb(c2);
-  const r=a.r+(b.r-a.r)*t, g=a.g+(b.g-a.g)*t, bl=a.b+(b.b-a.b)*t;
-  return rgbToHex(r,g,bl);
-}
-function mix_hsl(c1,c2,t, path){
-  const a=hexToRgb(c1), b=hexToRgb(c2);
-  const A=rgbToHsl(a.r,a.g,a.b), B=rgbToHsl(b.r,b.g,b.b);
-  const dh = hueDelta(A.h, B.h, path);
-  const h = (A.h + dh*t + 360) % 360;
-  const s = A.s + (B.s - A.s)*t;
-  const l = A.l + (B.l - A.l)*t;
-  const R = hslToRgb(h,s,l);
-  return rgbToHex(R.r,R.g,R.b);
-}
-function mix_oklch_pretty(c1,c2,t, path, longPath, chromaBoost, lift){
-  // Base OKLCH interpolation
-  const A=hexToRgb(c1), B=hexToRgb(c2);
-  const aLab=rgbToOklab(A.r,A.g,A.b), bLab=rgbToOklab(B.r,B.g,B.b);
-  const a=oklabToOklch(aLab.L, aLab.a, aLab.b), b=oklabToOklch(bLab.L, bLab.a, bLab.b);
-
-  let dh = hueDelta(a.h, b.h, path);
-  if(longPath && Math.abs(dh) < 180){ dh += (dh>=0? 360 : -360); }
-
-  // Smoothstep easing for L; bell curve for C boost
-  const bell = Math.sin(Math.PI * t);            // 0→1→0
-  const ss = t*t*(3 - 2*t);                      // smoothstep
-
-  let L = a.L + (b.L - a.L)*ss + (lift/100)*bell;   // lift is ±%
-  let C = a.C + (b.C - a.C)*t  + (chromaBoost/100)*0.6*bell; // 0..0.6 extra C scaled
-
-  const h = (a.h + dh*t + 360) % 360;
-
-  const lab = oklchToOklab(L,C,h);
-  const rgb = oklabToRgb(lab.L, lab.a, lab.b);
-  return rgbToHex(rgb.r, rgb.g, rgb.b);
-}
-
-/* Build N color stops across the blend band */
-function bandStops(cNow, cNext, p1, p2){
-  const N = 28;
-  const {blend, huePath, chroma, lift} = state;
-
-  if(blend === 'via-white' || blend === 'via-black'){
-    const mid = (p1+p2)/2;
-    const midColor = (blend==='via-white') ? '#ffffff' : '#000000';
-    return [ `${cNow} ${p1}%`, `${midColor} ${mid}%`, `${cNext} ${p2}%` ];
-  }
-
-  const stops = [];
-  for(let i=0;i<=N;i++){
-    const t = i/N;
-    let col;
-    if(blend==='oklch' || blend==='oklch-long'){
-      col = mix_oklch_pretty(cNow, cNext, t, huePath, blend==='oklch-long', state.chroma, state.lift);
-    } else if(blend==='hsl'){
-      col = mix_hsl(cNow, cNext, t, huePath);
-    } else {
-      col = mix_srgb(cNow, cNext, t);
-    }
-    const pos = p1 + (p2 - p1)*t;
-    stops.push(`${col} ${pos}%`);
-  }
-  return stops;
-}
-
-/* ===== Time → gradient ===== */
+/* ---------- Time → gradient ---------- */
 function h12(h){ const v = h % 12; return v===0 ? 12 : v; }
 function hourColor(hour){ return state.hours[(hour-1+12)%12] || '#ffffff'; }
 
 function update(){
   const now = new Date();
-  const cur = h12(now.getHours());
+  const cur = h12(now.getHours());           // map to 1..12
   const next = cur % 12 + 1;
 
   const cNow  = hourColor(cur);
   const cNext = hourColor(next);
 
+  // Hour progress (0 at :00 → 1 at :59.999)
   const t = (now.getMinutes() + now.getSeconds()/60 + now.getMilliseconds()/60000) / 60;
 
-  const p = (1 - t) * 100;         // center % (right→left)
-  const band = state.band;         // blend band width
+  // Midpoint moves from right (100%) → left (0%)
+  const p = (1 - t) * 100;      // center position in %
+  const band = 22;              // width of blend band in %
   const p1 = Math.max(0, Math.min(100, p - band/2));
   const p2 = Math.max(0, Math.min(100, p + band/2));
 
-  const stops = [ `${cNow} 0%`, `${cNow} ${p1}%` ]
-    .concat(bandStops(cNow, cNext, p1, p2))
-    .concat([ `${cNext} ${p2}%`, `${cNext} 100%` ])
-    .join(',');
-
-  document.body.style.backgroundImage = `linear-gradient(${state.angle}deg, ${stops})`;
+  // Build gradient with smooth blend band
+  const grad = `linear-gradient(90deg,
+                 ${cNow} 0%,
+                 ${cNow} ${p1}%,
+                 ${cNext} ${p2}%,
+                 ${cNext} 100%)`;
+  document.body.style.backgroundImage = grad;
 
   requestAnimationFrame(update);
 }
 
-/* ===== Boot ===== */
-function renderGrain(){ /* defined above */ }
-function applyGrain(){
-  document.documentElement.style.setProperty('--grain-opacity', (state.grainAmt/100).toString());
-  grainDiv.style.display = state.grainAmt>0 ? 'block' : 'none';
-  renderGrain();
-  if(grainTimer){ clearInterval(grainTimer); grainTimer = null; }
-  if(state.grainAnim && state.grainAmt>0){ grainTimer = setInterval(renderGrain, 250); }
-}
-function renderGrain(){
-  const size = 128;
-  if(!renderGrain.canvas){
-    const c = document.createElement('canvas'); c.width = size; c.height = size;
-    renderGrain.canvas = c; renderGrain.ctx = c.getContext('2d', { willReadFrequently: true });
-  }
-  const c = renderGrain.canvas, ctx = renderGrain.ctx;
-  const id = ctx.createImageData(size, size); const data = id.data;
-  for(let i=0;i<data.length;i+=4){
-    const v = (Math.random()*255)|0;
-    data[i]=data[i+1]=data[i+2]=v; data[i+3]=255;
-  }
-  ctx.putImageData(id,0,0);
-  grainDiv.style.backgroundImage = `url(${c.toDataURL()})`;
-}
-
+/* ---------- Boot ---------- */
 buildSwatches();
 applyGrain();
 update();
