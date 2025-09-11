@@ -21,15 +21,24 @@
 
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg); color:var(--fg);
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       display:grid; place-items:center;
       transition: background-color .6s ease; /* smooth drift in fuzzy mode */
     }
 
+    /* ----- Layout ----- */
     .wrap{ width: min(1100px, 94vw); }
-    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 28px auto 18px; max-width: 1100px; }
-    .brand{ display:flex; align-items:center; gap:10px; opacity:.9; letter-spacing:.5px; font-weight:600; font-size:1rem; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin: 28px auto 18px; max-width: 1100px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; opacity:.9;
+      letter-spacing:.5px; font-weight:600; font-size:1rem;
+    }
     .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--fg); filter:blur(.2px); }
 
     .controls{ display:flex; align-items:center; gap:10px; }
@@ -43,7 +52,7 @@
 
     .clock{ display:grid; justify-content:center; align-items:center; gap: var(--gap); margin: 24px auto 18px; }
 
-    /* Tiles */
+    /* Modes */
     .tiles{ grid-template-columns: repeat(6, var(--tile-size)); }
     .tile{
       width: var(--tile-size); height: var(--tile-size);
@@ -51,18 +60,29 @@
       box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 7%), var(--shadow);
       position:relative; overflow:hidden; transform: translateZ(0);
     }
-    .tile::after{ content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgb(255 255 255 / .04), transparent 30%, transparent 70%, rgb(0 0 0 / .15)); pointer-events:none; }
-    .tile-num{ position:absolute; inset:auto 8px 8px auto; width:28px; height:28px; border-radius:8px; background: rgb(0 0 0 / .22); color: rgb(255 255 255 / .75); display:grid; place-items:center; font-weight:700; font-size:.95rem; opacity:0; transition: opacity .2s ease; }
+    .tile::after{
+      content:""; position:absolute; inset:0;
+      background: linear-gradient(180deg, rgb(255 255 255 / .04), transparent 30%, transparent 70%, rgb(0 0 0 / .15));
+      pointer-events:none;
+    }
+    .tile-num{
+      position:absolute; inset:auto 8px 8px auto;
+      width:28px; height:28px; border-radius:8px;
+      background: rgb(0 0 0 / .22); color: rgb(255 255 255 / .75);
+      display:grid; place-items:center; font-weight:700; font-size:.95rem;
+      opacity:0; transition: opacity .2s ease;
+    }
     .show-digits .tile-num{ opacity:1 }
 
-    /* Stripes */
     .stripes{ grid-template-columns: repeat(6, 1fr); width:min(1100px, 92vw); height:min(40vh, 340px); }
     .stripe{ border-radius: 18px; position:relative; overflow:hidden; box-shadow: var(--shadow); }
     .stripe::after{ content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgb(255 255 255 / .06), transparent 28%, transparent 75%, rgb(0 0 0 / .18));}
 
-    /* Rings */
     .ring-wrap{ position:relative; width:var(--ring-size); height:var(--ring-size); margin-inline:auto; }
-    .ring{ position:absolute; inset:0; border-radius:50%; mask: radial-gradient(circle at center, transparent calc(50% - var(--ring-thickness)), black calc(50% - var(--ring-thickness) + 1px)); box-shadow: var(--shadow); }
+    .ring{ position:absolute; inset:0; border-radius:50%;
+      mask: radial-gradient(circle at center, transparent calc(50% - var(--ring-thickness)), black calc(50% - var(--ring-thickness) + 1px));
+      box-shadow: var(--shadow);
+    }
     .ring.hh{ transform: scale(1); }
     .ring.mm{ transform: scale(.85); }
     .ring.ss{ transform: scale(.70); }
@@ -73,12 +93,15 @@
     .progress{ height:10px; width:min(1100px, 92vw); margin: 18px auto 28px; background:#1a1a1c; border-radius:12px; overflow:hidden; box-shadow: var(--shadow); }
     .progress .bar{ height:100%; width:0%; background: linear-gradient(90deg, #fff, #777); transition: width .25s ease; }
 
-    /* Fuzzy hints */
+    /* New: Fuzzy mode training hint */
     .fuzzyHint{ display:flex; gap:8px; align-items:center; justify-content:center; color:var(--muted); font-size:.9rem; margin: 10px 0 2px; }
     .dotChip{ width:10px; height:10px; border-radius:50%; box-shadow:inset 0 0 0 1px rgb(255 255 255 / .35); }
 
     /* Settings Panel */
-    dialog{ border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg); width:min(920px, 92vw); box-shadow: var(--shadow); }
+    dialog{
+      border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg);
+      width:min(920px, 92vw); box-shadow: var(--shadow);
+    }
     dialog::backdrop{ background: rgb(0 0 0 / .45) }
     .panel{ padding:20px 18px 18px; }
     .panel h2{ margin:4px 0 14px; font-size:1.1rem; letter-spacing:.3px; }
@@ -168,7 +191,7 @@
   </dialog>
 
   <script>
-    // ---------- Palette & Settings ----------
+    /* ---------- Palette & Settings ---------- */
     const DEFAULTS = {
       palette: [
         '#ffffff', // 0
@@ -206,7 +229,7 @@
 
     let state = store.load();
 
-    // DOM
+    /* ---------- DOM ---------- */
     const tilesEl = document.getElementById('clockTiles');
     const stripesEl = document.getElementById('clockStripes');
     const ringH = document.getElementById('ringHours');
@@ -232,13 +255,23 @@
     const hNow = document.getElementById('hNow');
     const hNext = document.getElementById('hNext');
 
-    // Helpers
-    function hexToRgb(hex){ const m = hex.trim().replace('#',''); const v = m.length===3 ? m.split('').map(x=>x+x).join('') : m; return { r: parseInt(v.slice(0,2),16), g: parseInt(v.slice(2,4),16), b: parseInt(v.slice(4,6),16) }; }
-    function rgb(r,g,b){ return `rgb(${r} ${g} ${b})`; }
+    /* ---------- Helpers ---------- */
+    function hexToRgb(hex){
+      const m = hex.trim().replace('#','');
+      const v = m.length===3 ? m.split('').map(x=>x+x).join('') : m;
+      return { r: parseInt(v.slice(0,2),16), g: parseInt(v.slice(2,4),16), b: parseInt(v.slice(4,6),16) };
+    }
+    function rgbc(r,g,b){ return 'rgb(' + r + ', ' + g + ', ' + b + ')'; }
     function lerp(a,b,t){ return a + (b - a) * t; }
-    function lerpColor(a,b,t){ const pa = hexToRgb(a), pb = hexToRgb(b); return rgb(Math.round(lerp(pa.r,pb.r,t)), Math.round(lerp(pa.g,pb.g,t)), Math.round(lerp(pa.b,pb.b,t))); }
+    function lerpColor(a,b,t){
+      const pa = hexToRgb(a), pb = hexToRgb(b);
+      const r = Math.round(lerp(pa.r,pb.r,t));
+      const g = Math.round(lerp(pa.g,pb.g,t));
+      const b2 = Math.round(lerp(pa.b,pb.b,t));
+      return rgbc(r,g,b2);            /* comma form for broad browser support */
+    }
 
-    // Swatches 0–9
+    /* ---------- Swatches ---------- */
     function buildSwatches(){
       swatchGrid.innerHTML = '';
       for(let i=0;i<10;i++){
@@ -250,7 +283,6 @@
       }
     }
 
-    // Hour swatches 1–12
     function buildHourSwatches(){
       hourGrid.innerHTML = '';
       for(let i=1;i<=12;i++){
@@ -266,19 +298,22 @@
       const P = state.palette;
       const mix = (a,b,t=0.5)=> lerpColor(a,b,t);
       const hp = [];
-      hp[0]=P[1]; hp[1]=P[2]; hp[2]=P[3]; hp[3]=P[4]; hp[4]=P[5]; hp[5]=P[6]; hp[6]=P[7]; hp[7]=P[8]; hp[8]=P[9];
+      hp[0]=P[1]; hp[1]=P[2]; hp[2]=P[3]; hp[3]=P[4]; hp[4]=P[5]; hp[5]=P[6];
+      hp[6]=P[7]; hp[7]=P[8]; hp[8]=P[9];
       hp[9]=mix(P[1],P[0],0.3); hp[10]=P[1]; hp[11]=mix(P[1],P[2],0.5);
       state.hourPalette = hp; store.save(state); buildHourSwatches();
     }
 
-    // Build faces
+    /* ---------- Faces ---------- */
     function initFaces(){
+      // Tiles
       tilesEl.innerHTML = '';
       for(let i=0;i<6;i++){
         const t = document.createElement('div'); t.className = 'tile';
         const n = document.createElement('div'); n.className = 'tile-num'; n.textContent = '0';
         t.appendChild(n); tilesEl.appendChild(t);
       }
+      // Stripes
       stripesEl.innerHTML = '';
       for(let i=0;i<6;i++){ const s = document.createElement('div'); s.className = 'stripe'; stripesEl.appendChild(s); }
       updateDigits();
@@ -303,23 +338,26 @@
       const digits = String(hour).padStart(2,'0').split('').map(x=>parseInt(x,10));
       const c1 = colourOfDigit(digits[0]);
       const c2 = colourOfDigit(digits[1]);
-      const t = (hour>=10) ? 0.35 : 0.5;
+      const t = (hour>=10) ? 0.35 : 0.5;  // bias toward first digit for 10–12
       return lerpColor(c1, c2, t);
     }
 
     function applyMode(){
       const fuzzy = state.mode==='fuzzy';
-      tilesEl.hidden = state.mode !== 'tiles';
+      tilesEl.hidden   = state.mode !== 'tiles';
       stripesEl.hidden = state.mode !== 'stripes';
       document.getElementById('clockRings').hidden = state.mode !== 'rings';
       document.getElementById('clockFuzzy').hidden = !fuzzy;
       modeBtn.textContent = 'Mode: ' + (state.mode[0].toUpperCase()+state.mode.slice(1));
-      progress.hidden = fuzzy;
+      progress.style.display = fuzzy ? 'none' : '';   // definitely hide in fuzzy
       fuzzyHint.hidden = !fuzzy;
     }
 
     function cycleMode(){
-      state.mode = state.mode === 'fuzzy' ? 'tiles' : state.mode === 'tiles' ? 'stripes' : state.mode === 'stripes' ? 'rings' : 'fuzzy';
+      state.mode = state.mode === 'fuzzy' ? 'tiles'
+                : state.mode === 'tiles'  ? 'stripes'
+                : state.mode === 'stripes'? 'rings'
+                : 'fuzzy';
       store.save(state); applyMode();
     }
 
@@ -355,46 +393,96 @@
         <span class="swatch" style="background:${colourOfDigit(s2)}"></span>S2
       `;
 
-      // Progress bar: minute progress
+      // Progress bar (non-fuzzy modes only)
       const minutePct = ((now.getSeconds() + now.getMilliseconds()/1000)/60) * 100;
       progressBar.style.width = `${minutePct}%`;
       progressBar.style.background = `linear-gradient(90deg, ${colourOfDigit(s1)}, ${colourOfDigit(s2)})`;
 
-      // Fuzzy colour drift
+      // Fuzzy: body background drifts from hour→next hour
       if(state.mode==='fuzzy'){
         let h = now.getHours();
         if(state.twelve) h = (h % 12) || 12; // 1..12
-        const next = state.twelve ? ((h % 12) + 1) : ((now.getHours()+1) % 24);
+        const rawNext = state.twelve ? ((h % 12) + 1) : ((now.getHours()+1) % 24);
+        const next = state.twelve ? rawNext : ((rawNext%12)||12);
+
         const hNowC  = hourColour(h);
-        const hNextC = hourColour(state.twelve ? next : ((next%12)||12));
+        const hNextC = hourColour(next);
         const t = now.getMinutes()/60 + (state.smooth ? now.getSeconds()/3600 : 0);
         const mix = lerpColor(hNowC, hNextC, Math.min(Math.max(t,0),1));
-        document.body.style.background = mix;
-        hNow.style.background = hNowC; hNext.style.background = hNextC;
+
+        document.body.style.backgroundColor = mix;  /* animate background-color */
+        hNow.style.background  = hNowC;
+        hNext.style.background = hNextC;
       } else {
-        document.body.style.background = 'var(--bg)';
+        document.body.style.backgroundColor = 'var(--bg)';
       }
     }
 
-    // Start
+    /* ---------- Start & UI ---------- */
     buildSwatches(); buildHourSwatches(); initFaces(); applyMode(); updateDigits();
 
-    // UI
-    settingsBtn.addEventListener('click', ()=>{ buildSwatches(); buildHourSwatches(); twelve.checked=!!state.twelve; smooth.checked=!!state.smooth; customHour.checked=!!state.customHour; hourSection.style.display = state.customHour? 'block':'none'; panel.showModal(); });
+    settingsBtn.addEventListener('click', ()=>{
+      buildSwatches(); buildHourSwatches();
+      twelve.checked = !!state.twelve;
+      smooth.checked = !!state.smooth;
+      customHour.checked = !!state.customHour;
+      hourSection.style.display = state.customHour ? 'block' : 'none';
+      panel.showModal();
+    });
     document.getElementById('closePanel').addEventListener('click', ()=> panel.close());
     twelve.addEventListener('change', (e)=>{ state.twelve = !!e.target.checked; store.save(state); updateDigits(); });
     smooth.addEventListener('change', (e)=>{ state.smooth = !!e.target.checked; store.save(state); });
     customHour.addEventListener('change', (e)=>{ state.customHour = !!e.target.checked; store.save(state); hourSection.style.display = state.customHour? 'block':'none'; });
-    document.getElementById('reset').addEventListener('click', ()=>{ state = JSON.parse(JSON.stringify(DEFAULTS)); store.save(state); buildSwatches(); buildHourSwatches(); applyMode(); updateDigits(); });
-    preset.addEventListener('change', (e)=>{ const key = e.target.value; if(!key) return; state.palette = PRESETS[key].slice(); store.save(state); buildSwatches(); if(!state.customHour) seedHourFromDigits(); updateDigits(); e.target.value=''; });
-    document.getElementById('exportBtn').addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify({palette: state.palette, hourPalette: state.hourPalette, customHour: state.customHour})], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'syn-clock-colours.json'; a.click(); URL.revokeObjectURL(a.href); });
-    document.getElementById('importBtn').addEventListener('click', ()=>{ const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = () => { const f = inp.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { try{ const obj = JSON.parse(r.result); if(obj.palette && Array.isArray(obj.palette)) state.palette = obj.palette.slice(0,10); if(obj.hourPalette && Array.isArray(obj.hourPalette)) state.hourPalette = obj.hourPalette.slice(0,12); if(typeof obj.customHour==='boolean') state.customHour = obj.customHour; store.save(state); buildSwatches(); buildHourSwatches(); updateDigits(); } catch{} }; r.readAsText(f); }; inp.click(); });
+    document.getElementById('reset').addEventListener('click', ()=>{
+      state = JSON.parse(JSON.stringify(DEFAULTS));
+      store.save(state);
+      buildSwatches(); buildHourSwatches(); applyMode(); updateDigits();
+    });
+    preset.addEventListener('change', (e)=>{
+      const key = e.target.value; if(!key) return;
+      state.palette = PRESETS[key].slice();
+      store.save(state);
+      buildSwatches();
+      if(!state.customHour) seedHourFromDigits();
+      updateDigits();
+      e.target.value='';
+    });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const payload = {palette: state.palette, hourPalette: state.hourPalette, customHour: state.customHour};
+      const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'syn-clock-colours.json'; a.click(); URL.revokeObjectURL(a.href);
+    });
+    document.getElementById('importBtn').addEventListener('click', ()=>{
+      const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+      inp.onchange = () => {
+        const f = inp.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try{
+            const obj = JSON.parse(r.result);
+            if(obj.palette && Array.isArray(obj.palette)) state.palette = obj.palette.slice(0,10);
+            if(obj.hourPalette && Array.isArray(obj.hourPalette)) state.hourPalette = obj.hourPalette.slice(0,12);
+            if(typeof obj.customHour==='boolean') state.customHour = obj.customHour;
+            store.save(state);
+            buildSwatches(); buildHourSwatches(); updateDigits();
+          } catch{}
+        };
+        r.readAsText(f);
+      };
+      inp.click();
+    });
     seedHourBtn.addEventListener('click', seedHourFromDigits);
     modeBtn.addEventListener('click', cycleMode);
-    digitsBtn.addEventListener('click', ()=>{ state.showDigits = !state.showDigits; digitsBtn.textContent = `Digits: ${state.showDigits? 'On':'Off'}`; store.save(state); updateDigits(); });
+    digitsBtn.addEventListener('click', ()=>{
+      state.showDigits = !state.showDigits;
+      digitsBtn.textContent = `Digits: ${state.showDigits? 'On':'Off'}`;
+      store.save(state); updateDigits();
+    });
 
-    // Animation
+    // Animation loop (throttled by the browser in background tabs)
     let rafId; function loop(){ updateDigits(); rafId = requestAnimationFrame(loop); } loop();
+
+    // Respect reduced motion
     const media = matchMedia('(prefers-reduced-motion: reduce)');
     function onPRM(){ if(media.matches){ cancelAnimationFrame(rafId); setInterval(updateDigits, 250); } }
     media.addEventListener('change', onPRM); onPRM();
