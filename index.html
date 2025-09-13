@@ -32,19 +32,23 @@
     background-repeat: repeat; background-size: auto;
   }
 
-  /* Minimal UI */
+  /* Title + text-style action */
   .brand{
     position:fixed; left:18px; top:20px; font-weight:700; opacity:.85;
     text-shadow: 0 2px 12px rgb(0 0 0 / .45); z-index:5;
   }
-  .topbar{
-    position:fixed; top:18px; right:18px; display:flex; gap:10px; z-index:5;
-    filter: drop-shadow(0 6px 18px rgb(0 0 0 / .35));
+  /* Colours control styled like the title (no pill) */
+  .brand-right{
+    position:fixed; right:18px; top:20px; z-index:5;
+    font-weight:700; opacity:.85; color:inherit;
+    text-shadow: 0 2px 12px rgb(0 0 0 / .45);
+    background:none; border:none; padding:0; margin:0;
+    font: inherit; cursor:pointer; appearance:none;
   }
-  .btn{ background:#1b1b1d; color:var(--fg); border:1px solid #333; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:600; letter-spacing:.2px; }
-  .btn:hover{ filter:brightness(1.1) }
+  .brand-right:hover{ opacity:1; text-decoration: underline; text-underline-offset: 3px; }
+  .brand-right:focus-visible{ outline:2px solid rgb(255 255 255 / .45); outline-offset:4px; border-radius:6px; }
 
-  /* Settings */
+  /* Dialog */
   dialog{
     border:none; border-radius:22px; padding:0; background:var(--panel); color:var(--fg);
     width:min(760px, 92vw); box-shadow: var(--shadow);
@@ -58,14 +62,17 @@
   .sw input[type="color"]{ width:100%; height:38px; border:none; background:transparent; border-radius:10px; cursor:pointer; }
   @media (max-width:760px){ .grid{ grid-template-columns: repeat(3,minmax(0,1fr)); } }
 
+  /* Button style kept only for the dialog close button */
+  .btn{ background:#1b1b1d; color:var(--fg); border:1px solid #333; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:600; letter-spacing:.2px; }
+  .btn:hover{ filter:brightness(1.1) }
+
   .version{position:fixed; right:14px; bottom:14px; font: 12px/1.2 ui-sans-serif,system-ui; opacity:.35}
 </style>
 </head>
 <body>
   <div class="brand">Hour Drift</div>
-  <div class="topbar">
-    <button class="btn" id="open">Colours</button>
-  </div>
+  <!-- Text-style Colours control -->
+  <button class="brand-right" id="open" aria-label="Choose colours">Colours</button>
 
   <!-- Grain overlay -->
   <div class="grain" id="grain" aria-hidden="true"></div>
@@ -84,7 +91,7 @@
 
 <script>
 /* ===== Build tag ===== */
-const BUILD = 'minimal-srgb-v13';
+const BUILD = 'minimal-srgb-v14';
 document.getElementById('ver').textContent = BUILD;
 
 /* ===== State (only colours 1–12; always 12-hour) ===== */
